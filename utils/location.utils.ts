@@ -1,5 +1,10 @@
-export const sendLocationNativeLibrary = async () => {
-  const isScreenOff = getScreenStatus();
+import GetLocation from 'react-native-get-location';
+import {writeToLocalStorage} from './storage.util';
+
+export const sendLocationNativeLibrary = async (
+  isScreenOff: boolean,
+  currentDate: String,
+) => {
   try {
     const {getCurrentPosition} = GetLocation;
     const location = await getCurrentPosition({
@@ -7,7 +12,6 @@ export const sendLocationNativeLibrary = async () => {
       enableHighAccuracy: true,
     });
 
-    const currentDate = new Date().toLocaleString();
     const filteredLocation = [
       'Lat: ' + location.latitude,
       'Lon: ' + location.longitude,
@@ -20,4 +24,4 @@ export const sendLocationNativeLibrary = async () => {
   }
 };
 
-const sendLocation = async () => {};
+export const sendLocation = async () => {};
