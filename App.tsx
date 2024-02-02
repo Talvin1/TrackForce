@@ -7,12 +7,11 @@ function App(): React.JSX.Element {
   const [isUsingLibrary, setIsUseLibrary] = useState(false);
   const [locationInterval, setLocationInterval] =
     useState<NodeJS.Timeout | null>(null);
-  const [filename, setFilename] = useState('');
+  const [filename, setFilename] = useState<string>('');
   const saveLocation = async (useLibraryForLocation: Boolean) => {
     const isScreenOff = getScreenStatus();
-    const currentDate = new Date().toLocaleString();
-
     if (useLibraryForLocation) {
+      const currentDate = new Date().toLocaleString();
       sendLocationNativeLibrary(isScreenOff, currentDate, filename);
     } else {
       sendLocation();
@@ -20,21 +19,27 @@ function App(): React.JSX.Element {
   };
 
   const startLocationInterval = () => {
-    setFilename('locationData' + String(Date.now()));
-    const intervalId = setInterval(
-      () => saveLocation(isUsingLibrary, filename),
-      5000,
-    );
+    const currentTime = String(Date.now());
+    setFilename(`locationData${currentTime}.txt`);    
+    if (locationInterval !== null) {
+      clearInterval(locationInterval);
+    }
+    const intervalId = setInterval(async () => {
+      await saveLocation(isUsingLibrary);
+    }, 5000);
+    
     setLocationInterval(intervalId);
   };
 
+
   const stopLocationInterval = () => {
-    if (locationInterval) {
-      clearInterval(locationInterval);
-      setLocationInterval(null);
-      setFilename('');
+    if (locationInterval) {      
+      clearInterval(locationInterval); 
     }
+    setLocationInterval(null); 
+    setFilename(''); 
   };
+  
 
   return (
     <View>
