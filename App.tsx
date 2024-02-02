@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Button, Switch, Text, View, StyleSheet } from 'react-native';
+import { Button, Switch, Text, View, StyleSheet, AppRegistry } from 'react-native';
 import getScreenStatus from './utils/screenState.util';
 import { sendLocation, sendLocationNativeLibrary } from './utils/location.utils';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
 
 const App: React.FC = (): React.ReactElement => {
   const [isUsingLibrary, setIsUsingLibrary] = useState<boolean>(false);
@@ -11,13 +10,10 @@ const App: React.FC = (): React.ReactElement => {
 
   const saveLocation = async (useLibraryForLocation: boolean): Promise<void> => {
     const isScreenOff = getScreenStatus();
-    if (useLibraryForLocation) {
-      const currentDate = new Date().toLocaleString();
-      sendLocationNativeLibrary(isScreenOff, currentDate, filename);
-    } else {
-      sendLocation();
-    }
-  };
+    const currentDate = new Date().toLocaleString();
+    if(useLibraryForLocation){
+    sendLocationNativeLibrary(isScreenOff, currentDate, filename);
+  }else{sendLocation()}};
 
   const startLocationInterval = (): void => {
     const currentTime = String(Date.now());
@@ -26,6 +22,7 @@ const App: React.FC = (): React.ReactElement => {
     if (locationInterval !== null) {
       clearInterval(locationInterval);
     }
+
     const intervalId = setInterval(async () => {
       await saveLocation(isUsingLibrary);
     }, 5000);
@@ -39,6 +36,9 @@ const App: React.FC = (): React.ReactElement => {
     }
     setLocationInterval(null);
     setFilename('');
+
+    // Unregister the headless task when the operation stops
+    // AppRegistry.cancelHeadlessTask('LogLocation');
   };
 
   return (
