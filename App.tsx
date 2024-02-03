@@ -10,72 +10,50 @@ const App: React.FC = (): React.ReactElement => {
   const [showCheckMark, setShowCheckMark] = useState<boolean>(false);
   const [showErrorMark, setShowErrorMark] = useState<boolean>(false);
   const [backgroundTask, setBackgroundTask] = useState<number | null>(null);
-  const [isRequestInProgress, setIsRequestInProgress] = useState<boolean>(false);
-
-
-  useEffect(() => {
-    return () => {
-      // Clear the BackgroundTimer interval when the component unmounts
-      if (backgroundTask) {
-        BackgroundTimer.clearInterval(backgroundTask);
-      }
-    };
-  }, []);
 
   const startLocationInterval = async (): Promise<void> => {
-    console.log('Starting location interval...');
     setShowErrorMark(false);
     setShowCheckMark(false);
-  
-    // Prevent starting a new interval if one is already running or if a request is in progress
-    if (backgroundTask || isRequestInProgress) {
-      console.log('Location interval or request is already running.');
-      return;
-    }
-  
+
     try {
-      setIsRequestInProgress(true); // Set flag to indicate that a request is in progress
       setIsLoading(true);
       const isScreenOff = getScreenStatus();
       const currentDate = new Date().toLocaleString();
       const currentTime = String(Date.now());
       const filenameForBackground = `locationData${currentTime}.json`;
-      console.log('Sending location data...');
-      await sendLocationNativeLibrary(isScreenOff, currentDate, filenameForBackground);
-      console.log('Location data sent successfully.');
-  
-      // Start the BackgroundTimer interval
-      const task = BackgroundTimer.setInterval(async () => {
-        console.log('Sending location data periodically...');
-        setIsLoading(true);
+      if(isUsingLibrary){
         await sendLocationNativeLibrary(isScreenOff, currentDate, filenameForBackground);
-        console.log('Location data sent periodically.');
-      }, 5000); // Run every 5 seconds
-  
-      setBackgroundTask(task);
+        const task = BackgroundTimer.setInterval(async () => {
+          setIsLoading(true);
+          await sendLocationNativeLibrary(isScreenOff, currentDate, filenameForBackground);
+        }, 5000);
+    
+        setBackgroundTask(task);
+      }else{
+        await sendLocation(); //Not implemented yet
+        const task = BackgroundTimer.setInterval(async () => {
+          setIsLoading(true);
+          await sendLocation(); //Not implemented yet
+        }, 5000);
+    
+        setBackgroundTask(task);
+      }
+     
   
       setTimeout(() => {
         setIsLoading(false);
         setShowCheckMark(true);
         setTimeout(() => {
           setShowCheckMark(false);
-        }, 3000); // Show checkmark for 3 seconds
-      }, 2000); // Wait 2 seconds before hiding loading indicator
+        }, 3000);
+      }, 2000);
     } catch (error: any) {
-      // Check if the error is due to a cancellation
-      if (error.message === 'Location cancelled by another request') {
-        console.log('Location request cancelled.');
-        setIsRequestInProgress(false); // Reset flag if request is cancelled
-        return;
-      }
-  
-      console.error('Error occurred while starting location interval:', error);
+      console.error('Error: ', error);
       setShowErrorMark(true);
       setIsLoading(false);
-      setIsRequestInProgress(false); // Reset flag if request fails
       setTimeout(() => {
         setShowErrorMark(false);
-      }, 3000); // Show error mark for 3 seconds
+      }, 3000);
     }
   };
   
