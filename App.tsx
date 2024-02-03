@@ -1,72 +1,97 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Switch, Text, View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import getScreenStatus from './utils/screenState.util';
-import { sendLocation, sendLocationNativeLibrary } from './utils/location.utils';
+import { sendLocation, sendLocationNativeLibrary } from './utils/location.util';
+import BackgroundTimer from 'react-native-background-timer';
 
 const App: React.FC = (): React.ReactElement => {
   const [isUsingLibrary, setIsUsingLibrary] = useState<boolean>(false);
-  const [locationInterval, setLocationInterval] = useState<NodeJS.Timeout | null>(null);
-  const [filename, setFilename] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showCheckMark, setShowCheckMark] = useState<boolean>(false);
   const [showErrorMark, setShowErrorMark] = useState<boolean>(false);
+  const [backgroundTask, setBackgroundTask] = useState<number | null>(null);
+  const [isRequestInProgress, setIsRequestInProgress] = useState<boolean>(false);
 
-  const saveLocation = async (useLibraryForLocation: boolean): Promise<void> => {
-    setIsLoading(true);
+
+  useEffect(() => {
+    return () => {
+      // Clear the BackgroundTimer interval when the component unmounts
+      if (backgroundTask) {
+        BackgroundTimer.clearInterval(backgroundTask);
+      }
+    };
+  }, []);
+
+  const startLocationInterval = async (): Promise<void> => {
+    console.log('Starting location interval...');
     setShowErrorMark(false);
+    setShowCheckMark(false);
+  
+    // Prevent starting a new interval if one is already running or if a request is in progress
+    if (backgroundTask || isRequestInProgress) {
+      console.log('Location interval or request is already running.');
+      return;
+    }
   
     try {
+      setIsRequestInProgress(true); // Set flag to indicate that a request is in progress
+      setIsLoading(true);
       const isScreenOff = getScreenStatus();
       const currentDate = new Date().toLocaleString();
-      if(useLibraryForLocation) {
-        await sendLocationNativeLibrary(isScreenOff, currentDate, filename);
-      } else {
-        await sendLocation();
-      }
-      setShowCheckMark(true);
+      const currentTime = String(Date.now());
+      const filenameForBackground = `locationData${currentTime}.json`;
+      console.log('Sending location data...');
+      await sendLocationNativeLibrary(isScreenOff, currentDate, filenameForBackground);
+      console.log('Location data sent successfully.');
+  
+      // Start the BackgroundTimer interval
+      const task = BackgroundTimer.setInterval(async () => {
+        console.log('Sending location data periodically...');
+        setIsLoading(true);
+        await sendLocationNativeLibrary(isScreenOff, currentDate, filenameForBackground);
+        console.log('Location data sent periodically.');
+      }, 5000); // Run every 5 seconds
+  
+      setBackgroundTask(task);
+  
       setTimeout(() => {
-        setShowCheckMark(false);
         setIsLoading(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Error occurred while saving location:", error);
+        setShowCheckMark(true);
+        setTimeout(() => {
+          setShowCheckMark(false);
+        }, 3000); // Show checkmark for 3 seconds
+      }, 2000); // Wait 2 seconds before hiding loading indicator
+    } catch (error: any) {
+      // Check if the error is due to a cancellation
+      if (error.message === 'Location cancelled by another request') {
+        console.log('Location request cancelled.');
+        setIsRequestInProgress(false); // Reset flag if request is cancelled
+        return;
+      }
+  
+      console.error('Error occurred while starting location interval:', error);
       setShowErrorMark(true);
       setIsLoading(false);
-      setTimeout(() => setShowErrorMark(false), 3000);
+      setIsRequestInProgress(false); // Reset flag if request fails
+      setTimeout(() => {
+        setShowErrorMark(false);
+      }, 3000); // Show error mark for 3 seconds
     }
   };
   
-
-  const startLocationInterval = (): void => {
-    const currentTime = String(Date.now());
-    setFilename(`locationData${currentTime}.json`);
-
-    if (locationInterval !== null) {
-      clearInterval(locationInterval);
-    }
-
-    setIsLoading(true);
-    const intervalId = setInterval(async () => {
-      await saveLocation(isUsingLibrary);
-    }, 5000);
-
-    setLocationInterval(intervalId);
-  };
-
   const stopLocationInterval = (): void => {
-    if (locationInterval) {
-      clearInterval(locationInterval);
-    }
-    setLocationInterval(null);
-    setFilename('');
+    setIsLoading(false);
     setShowCheckMark(false);
     setShowErrorMark(false);
+    if (backgroundTask) {
+      BackgroundTimer.clearInterval(backgroundTask);
+      setBackgroundTask(null);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Track Force</Text>
-      <Text></Text>
       <Text style={styles.description}>Turn Switch On (Right) To Use Location Library</Text>
       <Switch
         style={styles.switch}
@@ -77,10 +102,10 @@ const App: React.FC = (): React.ReactElement => {
       />
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={startLocationInterval} style={styles.startButton}>
-          <Text style={styles.buttonText}>Start Tracking</Text>
+          <Text style={styles.buttonText}>Start Operation</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={stopLocationInterval} style={styles.stopButton}>
-          <Text style={styles.buttonText}>Stop Tracking</Text>
+          <Text style={styles.buttonText}>Stop Operation</Text>
         </TouchableOpacity>
       </View>
       {isLoading && <ActivityIndicator style={styles.loadingIndicator} size="large" color="black" />}
@@ -142,24 +167,27 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     position: 'absolute',
-    bottom: 40, 
-    marginBottom: 20,
+    bottom: 100,
+    zIndex: 1,
   },
   checkMark: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 100,
     fontSize: 24,
     marginBottom: 20,
     color: 'black',
+    alignSelf: 'center',
+    zIndex: 1,
   },
   errorMark: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 100,
     fontSize: 24,
     marginBottom: 20,
     color: 'black',
+    alignSelf: 'center',
+    zIndex: 1,
   },
 });
-
 
 export default App;

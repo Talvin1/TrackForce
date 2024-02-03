@@ -9,7 +9,7 @@ export const sendLocationNativeLibrary = async (
   try {
     const {getCurrentPosition} = GetLocation;
     const location = await getCurrentPosition({
-      timeout: 50000,
+      timeout: 5000,
       enableHighAccuracy: true,
     });
 
