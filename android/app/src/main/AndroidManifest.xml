@@ -1,8 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
       android:usesCleartextTraffic="true"
       android:name=".MainApplication"
@@ -19,11 +22,13 @@
         android:windowSoftInputMode="adjustResize"
         android:exported="true">
         <intent-filter>
+            <action android:name="com.example.ACTION_START_LOCATION_SERVICE"/>
             <action android:name="android.intent.action.SCREEN_ON"/>
             <action android:name="android.intent.action.SCREEN_OFF"/>
             <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
+            <category android:name="android.intent.category.LAUNCHER"/>
         </intent-filter>
       </activity>
+      <service android:name="com.trackforce.LocationService" />
     </application>
 </manifest>
