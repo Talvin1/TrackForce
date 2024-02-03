@@ -2,18 +2,16 @@
  * @format
  */
 
-import { AppRegistry } from 'react-native';
+import {AppRegistry} from 'react-native';
 import App from './App';
-import { name as appName } from './app.json';
+import {name as appName} from './app.json';
+import notifee, {EventType} from '@notifee/react-native';
 
-// Define your headless task configuration
-const taskConfig = {
-  taskName: 'sendLocation', // Adjust the task name as needed
-  taskTimeout: 5000,
-  preventAppCrashInForeground: true, // Prevent app crash if in foreground
-};
+notifee.onBackgroundEvent(async ({type, detail}) => {
+  const {notification, pressAction} = detail;
+  if (type === EventType.PRESS && pressAction.id === 'default') {
+    await notifee.cancelNotification(notification.id);
+  }
+});
 
-// Register the headless task with its configuration
-AppRegistry.registerHeadlessTask('sendLocation', () => require('./App'), () => taskConfig);
-// Register the main component of your application
 AppRegistry.registerComponent(appName, () => App);

@@ -15,7 +15,7 @@ export const writeToLocalStorage = async (filename: string, data: any) => {
     await RNFS.appendFile(filePath, jsonData, 'utf8');
 
     const message = 'Data written successfully in path: ' + filePath;
-    Alert.alert(message);
+    console.log(message);
 
     await AsyncStorage.setItem('dataFilePath', filePath);
 
