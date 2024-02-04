@@ -4,7 +4,7 @@ The app will sample location if it's open in the foreground or if it's in the ba
 The App was tested on a Pixel 7 Pro (Android): API 34 - Android 14
 
 Current state: 
-The App launches and has 3 interactable pieces:
+The App launches and has 3 interactable elements:
 * Switch : Toggles between calling the library location getter function and the (Not implemented yet) Native android code location getter function.
 * Start Operation Button: Start location sampling intervals and a background timer to call the function.
 * Stop Operation Button: Stops location sampling intervals and the background timer to call the function, thus, resetting the application to the start state.
